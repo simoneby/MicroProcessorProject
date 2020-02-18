@@ -1,15 +1,23 @@
-import chisel3._
-import chisel3.util._
+package mvp
 
-class Datapath {
+import chisel3._
+
+class Memory {
+
+}
+
+class Datapath extends Module{
+  val io = IO(new Bundle{
+
+  })
 
   // define instruction memory
-  val iMem = new InstructionMemory()
+  val iMem = Module(new InstructionMemory())
   // TODO initial read to load in instruction data
 
 
   // define data memory
-  val dMem = new DataMemory()
+  val dMem = Module(new DataMemory())
   // TODO initial read to load in program data
 
 
@@ -18,18 +26,18 @@ class Datapath {
 
 
   // define ALU to be used
-  val alu = new ALU()
+  val alu = Module(new ALU())
 
 
   // ------------------------------ pipeline controls ----------------------------
 
-  val _IF = new InstructionFetch(iMem)
+  val _IF = Module(new InstructionFetch(iMem))
 
   // IF output into buffer reg
   val instructionReg = RegNext(_IF.io.instruction)
 
 
-  val _ID = new InstructionDecode(rMem)
+  val _ID = Module(new InstructionDecode(rMem))
 
   // ID input from buffer reg
   _ID.io.instruction := instructionReg
@@ -45,7 +53,7 @@ class Datapath {
   val wbrReg1 = RegNext(_ID.io.writeBackReg)
 
 
-  val _EX = new Execute(alu)
+  val _EX = Module(new Execute(alu))
 
   // EX input from buffer reg
   _EX.io.opcode := opcodeReg
@@ -62,7 +70,7 @@ class Datapath {
   val wbrReg2 = RegNext(wbrReg1)  // pass through
 
 
-  val _MA = new MemoryAccess(dMem)
+  val _MA = Module(new MemoryAccess(dMem))
 
   // MA input from buffer reg
   _MA.io.memSelect := memSelectReg2
@@ -75,10 +83,15 @@ class Datapath {
   val wbrReg3 = RegNext(wbrReg2)  // pass through
 
 
-  val _WB = new WriteBack(rMem)
+  val _WB = Module(new WriteBack(rMem))
 
   // WB input from buffer reg
   _WB.io.data := dataReg
   _WB.io.destination := wbrReg3
 
 }
+
+object DatapathMain extends App {
+  chisel3.Driver.execute(Array[String](), () => new Datapath())
+}
+

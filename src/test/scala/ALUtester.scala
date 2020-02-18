@@ -1,4 +1,5 @@
 import chisel3.iotesters.PeekPokeTester
+import mvp.ALU
 import org.scalatest.{FlatSpec, Matchers}
 
 // TO RUN TESTS TYPE THIS IN TERMINAL "sbt test"
