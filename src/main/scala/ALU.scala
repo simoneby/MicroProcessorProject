@@ -1,7 +1,8 @@
 
 
 import chisel3._
-import chisel3.util.{is, switch}
+import chisel3.util._
+
 
 
 class ALU extends Module {
@@ -20,8 +21,7 @@ class ALU extends Module {
     io.b := io.a
   }
 
-  switch(io.opcode) {
-
+  switch(io.opcode){
     is(0.U) {
       io.out := io.a // Pass a
     }
