@@ -3,6 +3,7 @@ import chisel3._
 class Datapath {
   val iW = 32;  // 32 bit instructions
   val aW = 8;   // 8 bit addresses in instruction memory
+  val vW = 32;  // 32 bit immediates
 
   // read-only instruction memory
   class InstructionMem extends Module {
@@ -29,4 +30,20 @@ class Datapath {
     iMem.io.rdAddr := pc                  // set memory read address to pc
     io.instruction := iMem.io.rdData      // set instruction to be output of memory read
   }
+
+  class instruction_decode extends Module {
+    val io = IO(new Bundle {
+      val instruction = Input(UInt(iW.W))
+      val a           = Output(UInt(vW.W))
+      val b           = Output(UInt(vW.W))
+      val imm         = Output(UInt(vW.W))
+    })
+
+    // parse opcode
+    // switch statement on opcode
+        // parse & extend immediate if necessary
+        // read values of a and b from register memory
+  }
+
+  // create a class for register memory?
 }
