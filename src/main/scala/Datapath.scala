@@ -41,10 +41,38 @@ class Datapath {
       val b           = Output(UInt(vW.W))  // value retrieved from reg
       val imm         = Output(UInt(vW.W))  // padded value from instruction
       val opcode      = Output(UInt(5.W))
+      val scode       = Output(UInt(3.W))
       val select      = Output(UInt(1.W))   // for the MUX between imm and b
     })
 
-    // parse components of instruction
+    io.opcode := io.instruction(0,4)
+
+    when(io.opcode(0) === 0.U(1.W)) {
+      io.scode := io.instruction(5,7)
+      when(io.scode === 0.U(3.W)){              // ALU Reg-Reg
+        // a = data @ reg
+        // b = data @ reg
+        // d = destination reg
+      } .elsewhen(io.scode === 1.U(3.W)) {      // ALU Reg-Imm
+        // a = data @ reg
+        // b = padded imm
+        // d = destination reg
+      }
+    } otherwise {
+      when(io.opcode === 16.U(5.W)){            // Mem Load
+        // a = data @ reg = load mem addr
+        // b = padded offset
+        // opcode = addition
+        // d = destination reg
+      } .elsewhen(io.opcode === 17.U(5.W)){     // Mem Store
+        // a = data @ reg = load mem addr
+        // b = padded offset
+        // opcode = addition
+        // d = source register?
+      }
+    }
+
+    /*// parse components of instruction
     io.opcode := io.instruction(0,4)    // opcode is first 5 bits of instruction
     switch(io.opcode(0)){               // first digit of opcode determines instruction type
 
@@ -64,13 +92,10 @@ class Datapath {
       is(1.U(1.W)){     // memory instruction
 
       }
-    }
-        // parse & extend immediate if necessary
-        // read values of a and b from register memory
+    }*/
+
+    // read values of a and b from register memory
   }
-
-  // create a class for register memory?
-
 
 
   class Mux extends Module {
