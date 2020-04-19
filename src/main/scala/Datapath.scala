@@ -102,7 +102,7 @@ class Datapath {
       memo.io.rdAddr := io.address
       io.loadedValue := memo.io.rdData
     }
-    when (io.opcode === 17.U){
+    .elsewhen (io.opcode === 17.U){
       val memo = new Memo()
       memo.io.wen := 1.U
       memo.io.wrAddr := io.address
@@ -110,7 +110,6 @@ class Datapath {
     }
 
   }
-
 
   class Memo extends Module {
     val io = IO(new Bundle {
@@ -133,6 +132,30 @@ class Datapath {
 
   }
 
+  class AluHandler extends Module{
+    val io = IO(new Bundle{
+      val a           = Input(UInt(vW.W))  // value retrieved from reg
+      val b           = Input(UInt(vW.W))  // value retrieved from reg
+      val immediate   = Input(UInt(vW.W))  // padded value from instruction
+      val opcode      = Input(UInt(5.W))
+      val select      = Input(UInt(1.W))   // for the MUX between imm and b
+      val scode       = Input(UInt(3.W))
+      val value       = Output(UInt(32.W))
+    })
+    val alu = new ALU()
+    alu.io.a := io.a
+    val mux = new Mux()
 
+    mux.io.b := io.b
+    mux.io.select := io.select
+    mux.io.immediate := io.immediate
+    io.b := mux.io.out // Using a Mux to decide between using value from register B and an immediate
+
+    alu.io.b := io.b
+    alu.io.select := io.scode
+    alu.io.opcode := io.opcode
+
+    io.value := alu.io.out
+  }
 
 }
