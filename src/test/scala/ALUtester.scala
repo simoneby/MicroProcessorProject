@@ -1,6 +1,7 @@
 import chisel3.iotesters.PeekPokeTester
 import org.scalatest.{FlatSpec, Matchers}
 
+// TO RUN TESTS TYPE THIS IN TERMINAL "sbt test"
 
 class ALUtest(alu: ALU) extends PeekPokeTester(alu){
   val a = 1
