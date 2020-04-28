@@ -4,29 +4,42 @@ import org.scalatest.{FlatSpec, Matchers}
 // TO RUN TESTS TYPE THIS IN TERMINAL "sbt test"
 
 class ALUtest(alu: ALU) extends PeekPokeTester(alu){
-  val a = 1
-  val b = 2
-  val sel = 0
-  val opcodes = Vector(0,1,2,3,4,5,6,7,8)
-  val results = Vector(1,2,0,3,-1,-2,0, 3, 3)
-  var opcode = 0
-  var res = 0
-  poke(alu.io.a, a)
-  poke(alu.io.b, b)
-  for ( i <- 0 until 9){
+  var a = 0
+  var b = 0
+  //val sel = 0
 
-    opcode = opcodes(i)
-    res = results(i)
+  def pass(a: Int, b: Int): Int = {a}
+  def inc(a: Int, b: Int): Int = {a + 1}
+  def dec(a: Int, b: Int): Int = {a - 1}
+  def add(a: Int, b: Int): Int = {a + b}
+  def sub(a: Int, b: Int): Int = {a - b}
+  def not(a: Int, b: Int): Int = {~a}
+  def and(a: Int, b:Int): Int = {a & b}
+  def or (a: Int, b:Int): Int = {a | b}
+  def xor(a: Int, b:Int): Int = {a ^ b}
 
-    poke(alu.io.select, sel)
-    poke(alu.io.opcode, opcode)
+  for (j <- 0 until 10) {
 
-    step(1)
+    a = j
+    poke(alu.io.a, a)
 
-    expect(alu.io.out, res)
+    for (k <- 0 until 10) {
 
+      b = k
+      poke(alu.io.b, b)
+      val functions = Vector(pass(a,b), inc(a,b), dec(a,b), add(a,b), sub(a,b), not(a,b), and(a,b), or(a,b), xor(a,b))
+
+      for (i <- 0 until 9) {
+
+        //poke(alu.io.select, sel)
+        poke(alu.io.opcode, i)
+
+        expect(alu.io.out, functions(index = i))
+        step(1)
+
+      }
+    }
   }
-
 }
 
 class ALUtester extends FlatSpec with Matchers{
