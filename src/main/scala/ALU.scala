@@ -10,12 +10,9 @@ class ALU extends Module {
     val a = Input(SInt(32.W))      // width of imput is 8
     val b = Input(SInt(32.W))
     val opcode = Input(UInt(5.W)) // dunno if there should be specific opcode for the ALU og if we use the whole
-    val select = Input(UInt(3.W)) // Currently not in use
+    //val select = Input(UInt(3.W)) // Currently not in use
     val out = Output(SInt(32.W))   // output is as big as input
   })
-
-
-
 
   io.out := 0.S
 
