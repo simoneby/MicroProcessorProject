@@ -1,13 +1,32 @@
 
-QUESTIONS: (Partly for Kendall and party for Martin)
+QUESTIONS: (Partly for Kendall and party for Martin) ------------------------------------------------------------------
 
-1. The input and output types of the ALU are signed in order to use negative numbers,
-    will this affect the datapath seeing that an Unsigned is passed to the alu, and taken from the ALU again
 
-2. How can i make sure I access the same registers? I need to read from registers in instruction decode in order
-   to pass on the values. Same with Instruciton memory and DataMemory?
+*Should the writeback always go to the same register? Doesnt make sense tbh, but i don't know how to change between
+ A or B without passing more arguments?
 
-3. Is there any writeback when writing data into storage? is it wrong? should there be any? right now it writes back
-    0 x 32 to the destination address
 
-4. Do registers work exactly the same as with memory in this project? Im confused
+*How can I make sure I am using the same Instruciton memory and DataMemory?
+
+
+
+ANSWERED: -------------------------------------------------------------------------------------------------------------
+
+*Do registers work exactly the same as with memory in this project? Im confused
+    -> They can, but its simpler just to use a vector.
+
+
+*Should you do any sort of writeback after a store instruciton?
+     -> no
+
+
+@How can i make sure I access the same registers? I need to read from registers in instruction decode in order
+ to pass on the values.
+     -> The registers are Vectors initialized in the Instrucion decode file.
+
+
+*The input and output types of the ALU are signed in order to use negative numbers,
+ will this affect the datapath seeing that an Unsigned is passed to the alu, and taken from the ALU again
+     -> This is fine as long as you dont compare integers, then it might matter. Right now (Signed in ALU, Unsigned
+     elsewhere) is the same hardware.
+

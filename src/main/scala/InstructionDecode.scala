@@ -13,7 +13,13 @@ class InstructionDecode extends Module{
     val opcode      = Output(UInt(5.W))                       // can be shortened
     val rd          = Output(UInt(1.W))
     val wd          = Output(UInt(1.W))
+    val memoryDestAddr = Output(UInt(8.W))
   })
+
+  val registerA = Reg(Vec(32, UInt(32.W)))
+  val registerB = Reg(Vec(32, UInt(32.W)))
+  val memoryRegister = Reg(Vec(32, UInt(8.W)))
+
 
 
   io.opcode := io.instruction(0,4)
@@ -23,11 +29,11 @@ class InstructionDecode extends Module{
 
   // THESE ARE THE ALU INSTRUCTIONS // ------------------------------------------------------------
   when(io.opcode(0) === 0.U(1.W)) {
-    // a = // 32.W from memory io.instruction(12, 15)
+    io.a := registerA(io.instruction(12,15))
 
     when(select === 0.U(3.W)){                                   // ALU Reg-Reg
 
-      //io.b := // 32.W from memory io.instruction(16, 19)
+      io.b := registerB(io.instruction(16, 19))
 
     } .elsewhen(select === 1.U(3.W)) {                           // ALU Reg-Imm
 
@@ -41,19 +47,20 @@ class InstructionDecode extends Module{
   } otherwise {
     when(io.opcode === 16.U(5.W)){                              // Mem Load
 
+
       // a = data @ reg = load mem addr
       // b = padded offset
       // opcode = addition
       // d = destination reg
-      io.wd := 1.U
+      io.rd := 1.U
 
     } .elsewhen(io.opcode === 17.U(5.W)){                      // Mem Store
 
       // a = data @ reg = load mem addr
-      // b = padded offset
-      // opcode = addition
-      // d = source register?
-      io.rd := 1.U
+
+      io.a := registerA(io.instruction(12,15))
+      io.memoryDestAddr := memoryRegister(io.instruction(16, 19))
+      io.wd := 1.U
     }
   }
 }
