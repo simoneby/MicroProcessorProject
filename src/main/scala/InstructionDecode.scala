@@ -6,15 +6,13 @@ class InstructionDecode extends Module{
   val io = IO(new Bundle {
     val instruction = Input(UInt(32.W))
 
-    val destAddr    = Output(UInt(4.W))                       // destination register address for instruction
-    val a           = Output(UInt(32.W))                      // value retrieved from reg
-    val b           = Output(UInt(32.W))                      // value retrieved from reg
-    val imm         = Output(UInt(32.W))                      // padded value from instruction
-    val opcode      = Output(UInt(5.W))                       // can be shortened
-    val rd          = Output(UInt(1.W))
-    val wd          = Output(UInt(1.W))
-
-    val memoryDestAddr = Output(UInt(8.W))
+    val opcode       = Output(UInt(4.W))
+    val memSelect    = Output(UInt(1.W))
+    val isLoad       = Output(UInt(1.W))
+    val aVal         = Output(UInt(32.W))
+    val bVal         = Output(UInt(32.W))
+    val immVal       = Output(UInt(32.W))
+    val writeBackReg = Output(UInt(4.W))
   })
 
   val registerA = Reg(Vec(32, UInt(32.W)))

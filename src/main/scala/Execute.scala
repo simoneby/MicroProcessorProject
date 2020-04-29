@@ -3,17 +3,13 @@ import chisel3._
 
 class Execute extends Module{
   val io = IO(new Bundle{
-    val destAddr    = Input(UInt(4.W))   // destination register address for instruction
-    val a           = Input(UInt(32.W))  // value retrieved from reg
-    val b           = Input(UInt(32.W))  // value retrieved from reg or immediate
-    val opcode      = Input(UInt(5.W))   // This can be made shorter
-    val rd          = Input(UInt(1.W))
-    val wd          = Input(UInt(1.W))
-    val memoryDestAddr = Input(UInt(8.W))
+    val opcode    = Input(UInt(4.W))
+    val memSelect = Input(UInt(1.W))
+    val aVal      = Input(UInt(32.W))
+    val bVal      = Input(UInt(32.W))
+    val immVal    = Input(UInt(32.W))
 
-    val dataResult = Output(UInt(32.W))
-    val writeBackReg = Output(UInt(4.W))
-
+    val result    = Output(UInt(32.W))
   })
 
   // Go to Mem Access to read memory

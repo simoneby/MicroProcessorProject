@@ -3,13 +3,12 @@ import chisel3._
 
 class MemoryAccess extends Module {
   val io = IO(new Bundle{
-    val memoryAddress      = Input(UInt(8.W))
+    val memSelect     = Input(UInt(1.W))
+    val isLoad        = Input(UInt(1.W))
+    val memoryAddress      = Input(UInt(32.W))
     val writeData          = Input(UInt(32.W))
-    val rd                 = Input(UInt(1.W))
-    val wd                 = Input(UInt(1.W))
 
     val readData           = Output(UInt(8.W))
-
   })
 
   val dataMemory = new DataMemory
