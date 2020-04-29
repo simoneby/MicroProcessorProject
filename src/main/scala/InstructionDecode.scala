@@ -13,12 +13,15 @@ class InstructionDecode extends Module{
     val opcode      = Output(UInt(5.W))                       // can be shortened
     val rd          = Output(UInt(1.W))
     val wd          = Output(UInt(1.W))
+
     val memoryDestAddr = Output(UInt(8.W))
   })
 
   val registerA = Reg(Vec(32, UInt(32.W)))
   val registerB = Reg(Vec(32, UInt(32.W)))
-  val memoryRegister = Reg(Vec(32, UInt(8.W)))
+
+  val memoryRegister = Reg(Vec(32, UInt(8.W))) // what is this?
+
 
 
 
@@ -33,7 +36,7 @@ class InstructionDecode extends Module{
 
     when(select === 0.U(3.W)){                                   // ALU Reg-Reg
 
-      io.b := registerB(io.instruction(16, 19))
+      io.b := registerB(io.instruction(16, 19))  // forgot to expand this to 32 length, dunno if this happens automatically
 
     } .elsewhen(select === 1.U(3.W)) {                           // ALU Reg-Imm
 

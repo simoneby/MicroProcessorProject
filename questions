@@ -2,31 +2,31 @@
 QUESTIONS: (Partly for Kendall and party for Martin) ------------------------------------------------------------------
 
 
-*Should the writeback always go to the same register? Doesnt make sense tbh, but i don't know how to change between
+* Should the writeback always go to the same register? Doesnt make sense tbh, but i don't know how to change between
  A or B without passing more arguments?
 
 
-*How can I make sure I am using the same Instruciton memory and DataMemory?
+* How can I make sure I am using the same Instruciton memory and DataMemory?
 
 
 
 ANSWERED: -------------------------------------------------------------------------------------------------------------
 
-*Do registers work exactly the same as with memory in this project? Im confused
+* Do registers work exactly the same as with memory in this project? Im confused
     -> They can, but its simpler just to use a vector.
 
 
-*Should you do any sort of writeback after a store instruciton?
+* Should you do any sort of writeback after a store instruciton?
      -> no
 
 
-@How can i make sure I access the same registers? I need to read from registers in instruction decode in order
+* How can i make sure I access the same registers? I need to read from registers in instruction decode in order
  to pass on the values.
      -> The registers are Vectors initialized in the Instrucion decode file.
 
 
-*The input and output types of the ALU are signed in order to use negative numbers,
- will this affect the datapath seeing that an Unsigned is passed to the alu, and taken from the ALU again
+* The input and output types of the ALU are signed in order to use negative numbers,
+  will this affect the datapath seeing that an Unsigned is passed to the alu, and taken from the ALU again
      -> This is fine as long as you dont compare integers, then it might matter. Right now (Signed in ALU, Unsigned
      elsewhere) is the same hardware.
 
