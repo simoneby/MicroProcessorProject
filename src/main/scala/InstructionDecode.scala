@@ -1,13 +1,13 @@
 import chisel3._
+import chisel3.util._
 
-
-
-class InstructionDecode extends Module{
+class InstructionDecode(registerMem: Vec[UInt]) extends Module{
   val io = IO(new Bundle {
     val instruction = Input(UInt(32.W))
 
     val opcode       = Output(UInt(4.W))
     val memSelect    = Output(UInt(1.W))
+    val bSelect      = Output(UInt(1.W))
     val isLoad       = Output(UInt(1.W))
     val aVal         = Output(UInt(32.W))
     val bVal         = Output(UInt(32.W))
@@ -15,53 +15,33 @@ class InstructionDecode extends Module{
     val writeBackReg = Output(UInt(4.W))
   })
 
-  val registerA = Reg(Vec(32, UInt(32.W)))
-  val registerB = Reg(Vec(32, UInt(32.W)))
-
-  val memoryRegister = Reg(Vec(32, UInt(8.W))) // what is this?
-
-
-
-
-  io.opcode := io.instruction(0,4)
-  io.destAddr := io.instruction(8,11)                           // Same for all instruciton set formats
+  io.opcode := io.instruction(1,4)
+  io.memSelect := io.instruction(0)
+  io.isLoad := ~(io.instruction(4))
+  io.aVal := registerMem(io.instruction(12,15))
 
   val select = io.instruction(5,7)
 
-  // THESE ARE THE ALU INSTRUCTIONS // ------------------------------------------------------------
-  when(io.opcode(0) === 0.U(1.W)) {
-    io.a := registerA(io.instruction(12,15))
-
-    when(select === 0.U(3.W)){                                   // ALU Reg-Reg
-
-      io.b := registerB(io.instruction(16, 19))  // forgot to expand this to 32 length, dunno if this happens automatically
-
-    } .elsewhen(select === 1.U(3.W)) {                           // ALU Reg-Imm
-
-      io.b := io.instruction(16, 31)
+  when(io.memSelect === 0.U(1.W)) { // ---------- ALU Instructions ----------
+    io.writeBackReg := io.instruction(8,11)
+    switch(select){
+      is(0.U(3.W)) {            // ---- Reg-Reg ----
+        io.bVal := registerMem(io.instruction(16,19))
+        io.bSelect := 1.U(0.W)
+      }
+      is(1.U(3.W)) {           // ---- Reg-Imm ----
+        io.immVal := Cat(0.U(16.W), io.instruction(16,31))
+        io.bSelect := 0.U(0.W)
+      }
+      is(2.U(3.W)) { }         // ---- Reg ----  (don't need to do anything)
     }
-
-
-
-
-    // THESE ARE THE LOAD AND STORE INSTRUCTIONS // ------------------------------------------------------------
-  } otherwise {
-    when(io.opcode === 16.U(5.W)){                              // Mem Load
-
-
-      // a = data @ reg = load mem addr
-      // b = padded offset
-      // opcode = addition
-      // d = destination reg
-      io.rd := 1.U
-
-    } .elsewhen(io.opcode === 17.U(5.W)){                      // Mem Store
-
-      // a = data @ reg = load mem addr
-
-      io.a := registerA(io.instruction(12,15))
-      io.memoryDestAddr := memoryRegister(io.instruction(16, 19))
-      io.wd := 1.U
+  } otherwise {                     // ---------- Memory Instructions ---------
+    io.immVal := Cat(0.U(24.W), io.instruction(20,27))
+    io.bSelect := 0.U(1.W)
+    when(io.isLoad === 1.U(1.W)) {      // ---- Load ----
+      io.writeBackReg := io.instruction(8,11)
+    } otherwise {                       // ---- Store ----
+      io.writeBackReg := 0.U(4.W)
+      io.bVal := registerMem(io.instruction(16,19))
     }
   }
-}

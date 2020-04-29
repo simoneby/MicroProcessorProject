@@ -1,10 +1,10 @@
 import chisel3._
 
 
-class Execute extends Module{
+class Execute(alu : ALU) extends Module{
   val io = IO(new Bundle{
     val opcode    = Input(UInt(4.W))
-    val memSelect = Input(UInt(1.W))
+    val bSelect   = Input(UInt(1.W))
     val aVal      = Input(UInt(32.W))
     val bVal      = Input(UInt(32.W))
     val immVal    = Input(UInt(32.W))
@@ -12,30 +12,13 @@ class Execute extends Module{
     val result    = Output(UInt(32.W))
   })
 
-  // Go to Mem Access to read memory
-  when (io.rd === 1.U){
-    val memAccess = new MemoryAccess
-    memAccess.io.memoryAddress := io.memoryDestAddr
-    memAccess.io.rd := io.rd
-    io.dataResult := memAccess.io.readData
-  }
-    // Go to Mem Access to write memory
-  .elsewhen(io.wd === 1.U){
-    val memAccess = new MemoryAccess
-    memAccess.io.memoryAddress := io.memoryDestAddr
-    memAccess.io.wd := io.wd
-    memAccess.io.writeData := io.a
-    io.dataResult := 0.U(32.W)
-
-  }
-  .otherwise {
-    val alu = new ALU
-    alu.io.a := io.a
-    alu.io.b := io.b
-    alu.io.opcode := io.opcode
-    io.dataResult := alu.io.out
-
+  alu.io.opcode := io.opcode
+  alu.io.a := io.aVal
+  when(io.bSelect === 1.U(1.W)) { // ALU must know to ignore second opearnd for 1-operand opcodes
+    alu.io.b := io.bVal
+  } otherwise {
+    alu.io.b := io.immVal
   }
 
-
+  io.result := alu.io.out
 }
