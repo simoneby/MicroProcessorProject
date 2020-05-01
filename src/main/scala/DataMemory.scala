@@ -7,17 +7,17 @@ class DataMemory extends Module{
     val rdData  = Output(UInt(32.W))
     val wrAddr = Input(UInt(8.W))
     val wrData = Input(UInt(8.W))
-    val rd = Input(UInt(1.W))
-    val wr = Input(UInt(1.W))
+    val rd = Input(Bool())
+    val wr = Input(Bool())
   })
 
   val mem = SyncReadMem((scala.math.pow(2,8)).toInt, UInt(32.W))
 
-  when (io.rd === 1.U){
+  when (io.rd){
     io.rdData := mem(io.rdAddr)
   }
 
-  when (io.wr === 1.U){
+  when (io.wr){
     mem(io.wrAddr) := io.wrData
   }
 
