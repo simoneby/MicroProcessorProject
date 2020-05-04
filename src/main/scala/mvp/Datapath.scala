@@ -10,7 +10,9 @@ import chisel3.util._
 
 
 class Datapath extends Module{
-  val io = IO(new Bundle{ })
+  val io = IO(new Bundle{
+    val led = Output(UInt(1.W))
+  })
 
   // ------------------------------ pipeline controls ----------------------------
 
@@ -169,9 +171,11 @@ class Datapath extends Module{
     rMem(destination) := data
   }
 
+
+
 }
 
-object Datapath extends App {
+object DatapathMain extends App {
   chisel3.Driver.execute(Array[String](), () => new Datapath())
 }
 
