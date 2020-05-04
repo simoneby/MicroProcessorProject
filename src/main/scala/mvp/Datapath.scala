@@ -11,7 +11,9 @@ import chisel3.util._
 
 class Datapath extends Module {
   val io = IO(new Bundle {
-    val led = Output(UInt(1.W))
+    //val readOne = Input(Bool())
+    val inst = Input(UInt(32.W))
+    val result = Output(UInt(32.W))
   })
 
   // ------------------------------ pipeline controls ----------------------------
@@ -62,7 +64,9 @@ class Datapath extends Module {
 
   // ------------------------------ instruction decode ----------------------------
 
-  val instruction = instructionReg
+ // val instruction = instructionReg
+
+  val instruction = io.inst
 
   opcodeReg := instruction(4, 1)
   memSelectReg1 := instruction(0) // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
@@ -119,9 +123,11 @@ class Datapath extends Module {
     alu.io.b := bVal.asSInt()
   } otherwise {
     alu.io.b := immVal.asSInt()
+
   }
 
   resultReg := alu.io.out.asUInt()
+  io.result := resultReg
 
   val memSelectReg2 = RegNext(memSelectReg1) // pass through
   val isLoadReg2 = RegNext(isLoadReg1) // pass through
@@ -169,14 +175,18 @@ class Datapath extends Module {
 
   when(destination =/= 0.U(4.W)) { // can't overwrite 0 in reg0, nice
     rMem(destination) := data
-  }
+    //io.result := data
+  } //.otherwise{
+    //io.result := 0.U(32.W)
+  //}
 
-  when(rMem(1) === 1.U(32.W)) {
-    io.led := 1.U
-  }
-    .otherwise {
-      io.led := 0.U
-    }
+
+//  when(rMem(1) === 1.U(32.W)) {
+//    io.led := 1.U
+//  }
+//    .otherwise {
+//      io.led := 0.U
+//    }
 
 
 }
