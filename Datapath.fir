@@ -1,6 +1,6 @@
 ;buildInfoPackage: chisel3, version: 3.1.8, scalaVersion: 2.11.12, sbtVersion: 1.1.1, builtAtString: 2019-07-08 17:44:42.884, builtAtMillis: 1562607882884
 circuit Datapath : 
-  gmodule InstructionMemory :
+  module InstructionMemory : 
     input clock : Clock
     input reset : UInt<1>
     output io : {flip rdAddr : UInt<8>, rdData : UInt<32>}
@@ -176,11 +176,11 @@ circuit Datapath :
         wbrReg1 <= _T_70 @[Datapath.scala 100:15]
         bVal <= UInt<32>("h00") @[Datapath.scala 101:16]
         skip @[Datapath.scala 99:22]
-      else : @[Datapath.scala 103:18]
+      else : @[Datapath.scala 103:17]
         wbrReg1 <= UInt<4>("h00") @[Datapath.scala 104:15]
         node _T_73 = bits(instruction, 19, 16) @[Datapath.scala 105:35]
         bVal <= rMem[_T_73] @[Datapath.scala 105:16]
-        skip @[Datapath.scala 103:18]
+        skip @[Datapath.scala 103:17]
       skip @[Datapath.scala 95:15]
     alu.io.opcode <= opcode @[Datapath.scala 116:17]
     node _T_75 = asSInt(aVal) @[Datapath.scala 117:26]
@@ -205,14 +205,14 @@ circuit Datapath :
     reg wbrReg2 : UInt, clock @[Datapath.scala 129:24]
     wbrReg2 <= wbrReg1 @[Datapath.scala 129:24]
     when memSelect : @[Datapath.scala 138:19]
-      when isLoad : @[Datapath.scala 139:17]
+      when isLoad : @[Datapath.scala 139:18]
         dMem.io.wr <= UInt<1>("h00") @[Datapath.scala 140:18]
         dMem.io.rd <= UInt<1>("h01") @[Datapath.scala 141:18]
         dMem.io.rdAddr <= result @[Datapath.scala 142:22]
         dMem.io.wrAddr <= UInt<8>("h00") @[Datapath.scala 143:22]
         dMem.io.wrData <= UInt<32>("h00") @[Datapath.scala 144:22]
         data <= dMem.io.rdData @[Datapath.scala 145:15]
-        skip @[Datapath.scala 139:17]
+        skip @[Datapath.scala 139:18]
       else : @[Datapath.scala 146:7]
         dMem.io.wr <= UInt<1>("h01") @[Datapath.scala 147:18]
         dMem.io.rd <= UInt<1>("h00") @[Datapath.scala 148:18]
@@ -233,21 +233,16 @@ circuit Datapath :
     reg destination : UInt, clock @[Datapath.scala 163:24]
     destination <= wbrReg2 @[Datapath.scala 163:24]
     node _T_100 = neq(destination, UInt<4>("h00")) @[Datapath.scala 170:20]
-    when _T_100 : @[Datapath.scala 170:33]
+    when _T_100 : @[Datapath.scala 170:34]
       node _T_103 = or(destination, UInt<4>("h00"))
       node _T_104 = bits(_T_103, 3, 0)
       rMem[_T_104] <= data @[Datapath.scala 171:23]
-      skip @[Datapath.scala 170:33]
-    reg cntReg : UInt<32>, clock with : (reset => (reset, UInt<32>("h00"))) @[Datapath.scala 176:23]
-    reg blkReg : UInt<1>, clock with : (reset => (reset, UInt<1>("h00"))) @[Datapath.scala 177:23]
-    node _T_110 = add(cntReg, UInt<1>("h01")) @[Datapath.scala 179:20]
-    node _T_111 = tail(_T_110, 1) @[Datapath.scala 179:20]
-    cntReg <= _T_111 @[Datapath.scala 179:10]
-    node _T_112 = eq(cntReg, UInt<25>("h017d783f")) @[Datapath.scala 180:15]
-    when _T_112 : @[Datapath.scala 180:28]
-      cntReg <= UInt<1>("h00") @[Datapath.scala 181:12]
-      node _T_114 = not(blkReg) @[Datapath.scala 182:15]
-      blkReg <= _T_114 @[Datapath.scala 182:12]
-      skip @[Datapath.scala 180:28]
-    io.led <= blkReg @[Datapath.scala 184:10]
+      skip @[Datapath.scala 170:34]
+    node _T_106 = eq(rMem[1], UInt<32>("h01")) @[Datapath.scala 174:16]
+    when _T_106 : @[Datapath.scala 174:31]
+      io.led <= UInt<1>("h01") @[Datapath.scala 175:12]
+      skip @[Datapath.scala 174:31]
+    else : @[Datapath.scala 177:16]
+      io.led <= UInt<1>("h00") @[Datapath.scala 178:14]
+      skip @[Datapath.scala 177:16]
     
