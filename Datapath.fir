@@ -8,6 +8,20 @@ circuit Datapath :
     smem mem : UInt<32>[256] @[InstructionMemory.scala 13:24]
     infer mport _T_11 = mem[io.rdAddr], clock @[InstructionMemory.scala 15:19]
     io.rdData <= _T_11 @[InstructionMemory.scala 15:13]
+    write mport _T_14 = mem[UInt<8>("h00")], clock
+    _T_14 <= UInt<29>("h019100005")
+    write mport _T_17 = mem[UInt<8>("h04")], clock
+    _T_17 <= UInt<29>("h019210007")
+    write mport _T_20 = mem[UInt<8>("h08")], clock
+    _T_20 <= UInt<30>("h020321000")
+    write mport _T_23 = mem[UInt<8>("h0c")], clock
+    _T_23 <= UInt<32>("h088013000")
+    write mport _T_26 = mem[UInt<8>("h010")], clock
+    _T_26 <= UInt<32>("h088013000")
+    write mport _T_29 = mem[UInt<8>("h014")], clock
+    _T_29 <= UInt<32>("h080410000")
+    write mport _T_32 = mem[UInt<8>("h018")], clock
+    _T_32 <= UInt<28>("h0a440000")
     
   module DataMemory : 
     input clock : Clock
