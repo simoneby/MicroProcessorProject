@@ -10,242 +10,168 @@ import chisel3.util._
 
 
 class Datapath extends Module{
-  val io = IO(new Bundle{
-
-  })
-
-  // define instruction memory
-
-  // TODO initial read to load in instruction data
-
-
-  // define data memory
-
-  // TODO initial read to load in program data
-
-
-  // define register bank (10 32-bit registers)
-
-
-
-  // define ALU to be used
-
-
-
-  // --------------------------------------------
-
-
-  class InstructionFetch() extends Module {
-    val io = IO(new Bundle {
-      val instruction = Output(UInt(32.W))
-    })
-
-    var pc = RegInit(0.U(8.W)) // program counter starts at 0
-    pc := pc + 4.U(8.W)        // increase by 4 each clock cycle (since instructions are 4 bytes)
-
-    val iMem = Module(new InstructionMemory())
-
-    iMem.io.rdAddr := pc                 // set memory read address to pc
-    io.instruction := iMem.io.rdData      // set instruction to be output of memory read
-  }
-
-  class InstructionDecode() extends Module{
-    val io = IO(new Bundle {
-      val instruction = Input(UInt(32.W))
-
-      val opcode       = Output(UInt(4.W))
-      val memSelect    = Output(Bool())
-      val bSelect      = Output(Bool())
-      val isLoad       = Output(Bool())
-      val aVal         = Output(UInt(32.W))
-      val bVal         = Output(UInt(32.W))
-      val immVal       = Output(UInt(32.W))
-      val writeBackReg = Output(UInt(4.W))
-    })
-
-    val rMem = Reg(Vec(10, UInt(32.W)))
-
-
-    io.opcode := io.instruction(4,1)
-    io.memSelect := io.instruction(0)                // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
-    io.isLoad := ~io.instruction(4)                 // MIGHT BE A BUG HERE
-    io.aVal := rMem(io.instruction(15,12))
-    io.bVal := 0.U(32.W)
-    io.immVal := 0.U(32.W)
-    io.bSelect := false.B
-
-    when(!io.memSelect) { // ---------- ALU Instructions ----------
-      io.writeBackReg := io.instruction(11,8)
-
-      switch(io.instruction(7,5)) {
-
-        is(0.U) { // ---- Reg-Reg ----
-          io.bVal := rMem(io.instruction(19,16))
-          io.bSelect := true.B
-        }
-
-        is(1.U) { // ---- Reg-Imm ----
-          io.immVal := Cat(0.U(16.W), io.instruction(31,16))
-          io.bSelect := false.B
-        }
-
-        is(2.U) {} // ---- Reg ----  (don't need to do anything)
-      }
-    }
-     .otherwise {                     // ---------- Memory Instructions ---------
-      io.immVal := Cat(0.U(24.W), io.instruction(27,20))
-      io.bSelect := false.B
-
-      when(io.isLoad) {      // ---- Load ----
-        io.writeBackReg := io.instruction(11,8)
-
-      } .otherwise {                       // ---- Store ----
-        io.writeBackReg := 0.U(4.W)
-        io.bVal := rMem(io.instruction(19,16))
-      }
-    }
-
-  }
-
-
-  class Execute() extends Module{
-    val io = IO(new Bundle{
-      val opcode    = Input(UInt(4.W))
-      val bSelect   = Input(Bool())
-      val aVal      = Input(UInt(32.W))
-      val bVal      = Input(UInt(32.W))
-      val immVal    = Input(UInt(32.W))
-
-      val result    = Output(UInt(32.W))
-    })
-
-    val alu = Module(new ALU())
-
-    alu.io.opcode := io.opcode
-    alu.io.a := io.aVal.asSInt()
-    when(io.bSelect === true.B) { // ALU must know to ignore second opearnd for 1-operand opcodes
-      alu.io.b := io.bVal.asSInt()
-    } otherwise {
-      alu.io.b := io.immVal.asSInt()
-    }
-
-    io.result := alu.io.out.asUInt()
-  }
-
-  class MemoryAccess() extends Module {
-    val io = IO(new Bundle{
-      val memSelect   = Input(Bool())
-      val isLoad      = Input(Bool())
-      val result      = Input(UInt(32.W))
-      val writeData   = Input(UInt(32.W))
-
-      val data        = Output(UInt(32.W))
-    })
-
-    val dMem = Module(new DataMemory())
-    dMem.io.wrAddr := 0.U(8.W)
-    dMem.io.rdAddr := 0.U(8.W)
-    dMem.io.wrData := 0.U(32.W)
-
-    when(io.memSelect) {
-      when(io.isLoad){         // ----- Load -----
-        dMem.io.wr := false.B
-        dMem.io.rd := true.B
-        dMem.io.rdAddr := io.result
-        io.data := dMem.io.rdData
-      } otherwise {                         // ----- Store -----
-        dMem.io.wr := true.B
-        dMem.io.rd := false.B
-        dMem.io.wrAddr := io.result
-        dMem.io.wrData := io.writeData
-        io.data := 0.U(32.W)
-      }
-    } otherwise {
-      dMem.io.rd := false.B
-      dMem.io.wr := false.B
-      io.data := io.result
-    }
-
-  }
-
-  class WriteBack() extends Module {
-    val io = IO(new Bundle{
-      val data              = Input(UInt(32.W))
-      val destination       = Input(UInt(4.W))
-    })
-
-
-    val rMem = Reg(Vec(10, UInt(32.W)))
-
-    when(io.destination =/= 0.U(4.W)){  // can't overwrite 0 in reg0, nice
-      rMem(io.destination) := io.data
-    }
-
-  }
+  val io = IO(new Bundle{ })
 
   // ------------------------------ pipeline controls ----------------------------
 
-  val _IF = Module(new InstructionFetch())
+  // IF output buffer reg
+  val instructionReg = Reg(UInt(32.W))
 
-  // IF output into buffer reg
-  val instructionReg = RegNext(_IF.io.instruction)
-
-
-  val _ID = Module(new InstructionDecode())
-
-  // ID input from buffer reg
-  _ID.io.instruction := instructionReg
-
-  // ID ouput buffer registers
-  val opcodeReg = RegNext(_ID.io.opcode)
-  val memSelectReg1 = RegNext(_ID.io.memSelect)
-  val bSelectReg = RegNext(_ID.io.bSelect)
-  val isLoadReg1 = RegNext(_ID.io.isLoad)
-  val aValReg = RegNext(_ID.io.aVal)
-  val bValReg1 = RegNext(_ID.io.bVal)
-  val immValReg = RegNext(_ID.io.immVal)
-  val wbrReg1 = RegNext(_ID.io.writeBackReg)
-
-
-  val _EX = Module(new Execute())
-
-  // EX input from buffer reg
-  _EX.io.opcode := opcodeReg
-  _EX.io.bSelect := bSelectReg
-  _EX.io.aVal := aValReg
-  _EX.io.bVal := bValReg1
-  _EX.io.immVal := immValReg
+  // ID output buffer registers
+  val opcodeReg = Reg(UInt(4.W))
+  val memSelectReg1 = Reg(Bool())
+  val bSelectReg = Reg(Bool())
+  val isLoadReg1 = Reg(Bool())
+  val aValReg = Reg(UInt(32.W))
+  val bValReg1 = Reg(UInt(32.W))
+  val immValReg = Reg(UInt(32.W))
+  val wbrReg1 = Reg(UInt(4.W))
 
   // EX output buffer registers
+  val resultReg = Reg(UInt(32.W))
+
+  // MA output buffer registers
+  val dataReg = Reg(UInt(32.W))
+
+  // ------------------------------ memory instantiation ----------------------------
+
+  // define instruction memory
+  val iMem = Module(new InstructionMemory())
+  // TODO initial read to load in instruction data
+
+  // define data memory
+  val dMem = Module(new DataMemory())
+  // TODO initial read to load in program data
+
+  // define register bank (10 32-bit registers)
+  val rMem = Reg(Vec(10, UInt(32.W)))
+
+  // define ALU to be used
+  val alu = Module(new ALU())
+
+  // ------------------------------ START PIPELINE STAGES ----------------------------
+  // ------------------------------ instruction fetch ----------------------------
+
+  var pc = RegInit(0.U(8.W)) // program counter starts at 0
+  pc := pc + 4.U(8.W)        // increase by 4 each clock cycle (since instructions are 4 bytes)
+
+  iMem.io.rdAddr := pc                 // set memory read address to pc
+  instructionReg := iMem.io.rdData      // set instruction to be output of memory read
+
+  // ------------------------------ instruction decode ----------------------------
+
+  val instruction = instructionReg
+
+  opcodeReg := instruction(4,1)
+  memSelectReg1 := instruction(0)                // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
+  isLoadReg1 := ~instruction(4)                 // MIGHT BE A BUG HERE
+  aValReg := rMem(instruction(15,12))
+
+  when(!memSelectReg1) { // ---------- ALU Instructions ----------
+    wbrReg1 := instruction(11,8)
+
+    switch(instruction(7,5)) {
+
+      is(0.U) { // ---- Reg-Reg ----
+        bValReg1 := rMem(instruction(19,16))
+        immValReg := 0.U(32.W)
+        bSelectReg := true.B
+      }
+
+      is(1.U) { // ---- Reg-Imm ----
+        bValReg1 := 0.U(32.W)
+        immValReg := Cat(0.U(16.W), instruction(31,16))
+        bSelectReg := false.B
+      }
+
+      is(2.U) { // ---- Reg ----
+        bValReg1 := 0.U(32.W)
+        immValReg := 0.U(32.W)
+        bSelectReg := false.B
+      }
+    }
+  }.otherwise {                     // ---------- Memory Instructions ---------
+    immValReg := Cat(0.U(24.W), instruction(27,20))
+    bSelectReg := false.B
+
+    when(isLoadReg1) {      // ---- Load ----
+      wbrReg1 := instruction(11,8)
+      bValReg1 := 0.U(32.W)
+
+    } .otherwise {                       // ---- Store ----
+      wbrReg1 := 0.U(4.W)
+      bValReg1 := rMem(instruction(19,16))
+    }
+  }
+
+  // ------------------------------ execute ----------------------------
+  val opcode    = opcodeReg
+  val bSelect   = bSelectReg
+  val aVal      = aValReg
+  val bVal      = bValReg1
+  val immVal    = immValReg
+
+  alu.io.opcode := opcode
+  alu.io.a := aVal.asSInt()
+  when(bSelect === true.B) { // ALU must know to ignore second opearnd for 1-operand opcodes
+    alu.io.b := bVal.asSInt()
+  } otherwise {
+    alu.io.b := immVal.asSInt()
+  }
+
+  resultReg := alu.io.out.asUInt()
+
   val memSelectReg2 = RegNext(memSelectReg1)  // pass through
   val isLoadReg2 = RegNext(isLoadReg1)  // pass through
-  val resultReg = RegNext(_EX.io.result)
   val bValReg2 = RegNext(bValReg1)  // pass through
   val wbrReg2 = RegNext(wbrReg1)  // pass through
 
+  // ------------------------------ memory access ----------------------------
 
-  val _MA = Module(new MemoryAccess())
+  val memSelect   = memSelectReg2
+  val isLoad      = isLoadReg2
+  val result      = resultReg
+  val writeData   = bValReg2
 
-  // MA input from buffer reg
-  _MA.io.memSelect := memSelectReg2
-  _MA.io.isLoad := isLoadReg2
-  _MA.io.result := resultReg
-  _MA.io.writeData := bValReg2
+  when(memSelect) {
+    when(isLoad){               // ----- Load -----
+      dMem.io.wr := false.B
+      dMem.io.rd := true.B
+      dMem.io.rdAddr := result
+      dMem.io.wrAddr := 0.U(8.W)
+      dMem.io.wrData := 0.U(32.W)
+      dataReg := dMem.io.rdData
+    } otherwise {               // ----- Store -----
+      dMem.io.wr := true.B
+      dMem.io.rd := false.B
+      dMem.io.rdAddr := 0.U(8.W)
+      dMem.io.wrAddr := result
+      dMem.io.wrData := writeData
+      dataReg := 0.U(32.W)
+    }
+  } otherwise {
+    dMem.io.rd := false.B
+    dMem.io.wr := false.B
+    dMem.io.rdAddr := 0.U(8.W)
+    dMem.io.wrAddr := 0.U(8.W)
+    dMem.io.wrData := 0.U(32.W)
+    dataReg := result
+  }
 
-  // MA output buffer register
-  val dataReg = RegNext(_MA.io.data)
   val wbrReg3 = RegNext(wbrReg2)  // pass through
 
+  // ------------------------------ write back ----------------------------
 
-  val _WB = Module(new WriteBack())
+  val data              = dataReg
+  val destination       = wbrReg3
 
-  // WB input from buffer reg
-  _WB.io.data := dataReg
-  _WB.io.destination := wbrReg3
+  when(destination =/= 0.U(4.W)){  // can't overwrite 0 in reg0, nice
+    rMem(destination) := data
+  }
 
 }
 
-object DatapathMain extends App {
+object Datapath extends App {
   chisel3.Driver.execute(Array[String](), () => new Datapath())
 }
 
