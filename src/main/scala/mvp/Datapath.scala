@@ -3,6 +3,7 @@ package mvp
 import chisel3._
 import chisel3.util._
 
+
 //import chisel3.core.{Input, Output, RegInit, when}
 //import chisel3.{Bool, Bundle, Module, Reg, UInt, Vec}
 //import chisel3.util.{Cat, is, switch}
@@ -11,28 +12,11 @@ import chisel3.util._
 
 class Datapath extends Module{
   val io = IO(new Bundle{
-
+    val a = Input(Bool()) // Dummy input
+    val b = Output(Bool())
   })
 
-  // define instruction memory
-
-  // TODO initial read to load in instruction data
-
-
-  // define data memory
-
-  // TODO initial read to load in program data
-
-
-  // define register bank (10 32-bit registers)
-
-
-
-  // define ALU to be used
-
-
-
-  // --------------------------------------------
+  io.b := io.a
 
 
   class InstructionFetch() extends Module {
@@ -52,6 +36,10 @@ class Datapath extends Module{
   class InstructionDecode() extends Module{
     val io = IO(new Bundle {
       val instruction = Input(UInt(32.W))
+
+      val writeBackEnable = Input(Bool())
+      val writeBackRegAddress = Input(UInt(4.W))
+      val writeBackData = Input(UInt(32.W))
 
       val opcode       = Output(UInt(4.W))
       val memSelect    = Output(Bool())
@@ -105,7 +93,12 @@ class Datapath extends Module{
       }
     }
 
+    when(io.writeBackEnable && !(io.writeBackRegAddress === 0.U)){
+      rMem(io.writeBackRegAddress) := io.writeBackData
+    }
+
   }
+
 
 
   class Execute() extends Module{
@@ -140,12 +133,15 @@ class Datapath extends Module{
       val writeData   = Input(UInt(32.W))
 
       val data        = Output(UInt(32.W))
+      val writeBackEnable = Output(Bool())
     })
 
     val dMem = Module(new DataMemory())
     dMem.io.wrAddr := 0.U(8.W)
     dMem.io.rdAddr := 0.U(8.W)
     dMem.io.wrData := 0.U(32.W)
+
+    io.writeBackEnable := false.B
 
     when(io.memSelect) {
       when(io.isLoad){         // ----- Load -----
@@ -164,22 +160,29 @@ class Datapath extends Module{
       dMem.io.rd := false.B
       dMem.io.wr := false.B
       io.data := io.result
+      io.writeBackEnable := true.B
     }
 
   }
 
   class WriteBack() extends Module {
     val io = IO(new Bundle{
+      val writeBackEnable = Input(Bool())
       val data              = Input(UInt(32.W))
       val destination       = Input(UInt(4.W))
+      val dataOut           = Output(UInt(32.W))
+      val destOut           = Output(UInt(4.W))
     })
 
-
-    val rMem = Reg(Vec(10, UInt(32.W)))
-
-    when(io.destination =/= 0.U(4.W)){  // can't overwrite 0 in reg0, nice
-      rMem(io.destination) := io.data
+    io.destOut := 0.U
+    when (io.writeBackEnable){
+      io.dataOut := io.data
+      io.destOut := io.destination
+    } .otherwise {
+      io.dataOut := 0.U(32.W)
+      io.destOut := 0.U(4.W)
     }
+
 
   }
 
@@ -242,6 +245,12 @@ class Datapath extends Module{
   // WB input from buffer reg
   _WB.io.data := dataReg
   _WB.io.destination := wbrReg3
+  _WB.io.writeBackEnable := _MA.io.writeBackEnable
+
+  _ID.io.writeBackEnable := _WB.io.writeBackEnable
+  _ID.io.writeBackRegAddress := _WB.io.destOut
+  _ID.io.writeBackData := _WB.io.dataOut
+
 
 }
 
