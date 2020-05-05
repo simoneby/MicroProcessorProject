@@ -136,18 +136,19 @@ class Datapath extends Module {
 
   // ------------------------------ execute ----------------------------
   val opcode = opcodeReg.asUInt()
-  val bSelect = bSelectReg.asBool()
+  val bSelect = bSelectReg
   val aVal = aValReg.asUInt()
   val bVal = bValReg1.asUInt()
-  val immVal = immValReg.asUInt()
+  val immVal = immValReg
 
   alu.io.opcode := opcode
   alu.io.a := aVal
+  alu.io.b := 0.U
   when(bSelect === true.B) { // ALU must know to ignore second opearnd for 1-operand opcodes
     alu.io.b := bVal
-  } otherwise {
-    alu.io.b := immVal
-
+  }
+  .otherwise {
+  alu.io.b := immVal
   }
 
   resultReg := alu.io.out.asUInt()
