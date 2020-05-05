@@ -13,6 +13,17 @@ class Datapath extends Module {
   val io = IO(new Bundle {
     //val readOne = Input(Bool())
     val inst = Input(UInt(32.W))
+
+    val opcode = Output(UInt(5.W))
+    val select = Output(UInt(3.W))
+    val regA = Output(UInt(4.W))
+    val regB = Output(UInt(4.W))
+    val immediate = Output(UInt(16.W))
+    val destReg = Output(UInt(4.W))
+
+    val regAvalue = Output(UInt(32.W))
+
+
     val result = Output(UInt(32.W))
   })
 
@@ -71,23 +82,36 @@ class Datapath extends Module {
   opcodeReg := instruction(4, 1)
   memSelectReg1 := instruction(0) // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
   isLoadReg1 := ~instruction(4) // MIGHT BE A BUG HERE
-  aValReg := rMem(instruction(15, 12))
+  aValReg := rMem(instruction(15, 12).asUInt())
 
-  when(!memSelectReg1) { // ---------- ALU Instructions ----------
+
+  // --- for testing
+                                                                                        io.opcode := instruction(4,1)
+                                                                                        io.regA := instruction(15, 12)
+                                                                                        io.regB := 0.U(4.W)
+                                                                                        io.immediate := 0.U(16.W)
+                                                                                        io.select := instruction(7,5)
+                                                                                        io.destReg := instruction(11,8)
+                                                                                        io.regAvalue := aValReg
+  // --------------
+
+  when(memSelectReg1 === 0.U) { // ---------- ALU Instructions ----------
     wbrReg1 := instruction(11, 8)
 
-    switch(instruction(7, 5)) {
+    switch(instruction(7, 5).asUInt()) {
 
       is(0.U) { // ---- Reg-Reg ----
         bValReg1 := rMem(instruction(19, 16))
         immValReg := 0.U(32.W)
         bSelectReg := true.B
+        io.regB := instruction(19,16)
       }
 
       is(1.U) { // ---- Reg-Imm ----
         bValReg1 := 0.U(32.W)
         immValReg := Cat(0.U(16.W), instruction(31, 16))
         bSelectReg := false.B
+        io.immediate := immValReg
       }
 
       is(2.U) { // ---- Reg ----
@@ -111,18 +135,18 @@ class Datapath extends Module {
   }
 
   // ------------------------------ execute ----------------------------
-  val opcode = opcodeReg
-  val bSelect = bSelectReg
-  val aVal = aValReg
-  val bVal = bValReg1
-  val immVal = immValReg
+  val opcode = opcodeReg.asUInt()
+  val bSelect = bSelectReg.asBool()
+  val aVal = aValReg.asUInt()
+  val bVal = bValReg1.asUInt()
+  val immVal = immValReg.asUInt()
 
   alu.io.opcode := opcode
-  alu.io.a := aVal.asSInt()
+  alu.io.a := aVal
   when(bSelect === true.B) { // ALU must know to ignore second opearnd for 1-operand opcodes
-    alu.io.b := bVal.asSInt()
+    alu.io.b := bVal
   } otherwise {
-    alu.io.b := immVal.asSInt()
+    alu.io.b := immVal
 
   }
 
@@ -165,6 +189,7 @@ class Datapath extends Module {
     dMem.io.wrData := 0.U(32.W)
     dataReg := result
   }
+
 
   val wbrReg3 = RegNext(wbrReg2) // pass through
 
