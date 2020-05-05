@@ -48,21 +48,33 @@ class ALUtest(datapath: Datapath) extends PeekPokeTester(datapath){
 //    val instruction1 = "0000 0000000001010000 00010011000"
 //    val instruction1 = "0000000000000101 0000 0001 001 0011 0"
 
-    val memselect = "0"
-    val opcode = "0011"
-    val sel = "001"
-    val destAdr = "0001"
-    val regA = "0000"
-    val immediate = "0000000000001000"
+  val memselect = "0"
+  val opcode = "0011"
+  val sel = "001"
+  val destAdr = "0001"
+  val regA = "0000"
+  val immediate = "0000000000001000"
+
+  val instruction1 = immediate + regA + destAdr + sel + opcode + memselect
+
+  val memselect2 = "0"
+  val opcode2 = "0011"
+  val sel2 = "001"
+  val destAdr2 = "0010"
+  val regA2 = "0000"
+  val immediate2 = "0000000000000111"
+
+  val instruction2 = immediate2 + regA2 + destAdr2 + sel2 + opcode2 + memselect2
+
+  // ---------------------------
 
 
-    val instruction1 = immediate + regA + destAdr + sel + opcode + memselect
-    var instruction = BigInt(instruction1, 2)
+  poke(datapath.io.inst, BigInt(instruction1, 2))
+  step(1) // IF 1
+  //poke(datapath.io.inst, BigInt(instruction2, 2))
+  step(1) // ID 1, IF2
 
-  poke(datapath.io.inst, instruction)
-
-  step(1) // IF
-  step(1) // ID
+  //poke(datapath.io.inst, BigInt(instruction2, 2))
 
   expect(datapath.io.opcode, 3)
   expect(datapath.io.select, 1)
@@ -70,16 +82,27 @@ class ALUtest(datapath: Datapath) extends PeekPokeTester(datapath){
   expect(datapath.io.regB, 0)
   expect(datapath.io.immediate, 8)
 
-  step(1) // EX
+  step(1) // EX 1, ID2
 
   expect(datapath.io.result, 8)
 
-  step(1) // MA
-  step(1) // WB
+//  expect(datapath.io.opcode, 3)
+//  expect(datapath.io.select, 1)
+//  expect(datapath.io.regA, 0)
+//  expect(datapath.io.regB, 0)
+//  expect(datapath.io.immediate, 7)
+
+  step(1) // MA 1, EX2
+
+  //expect(datapath.io.result, 7)
+
+  step(1) // WB 1, MA2
 
   expect(datapath.io.WBvalue, 8)
 
+  step(1) // WB2
 
+  //expect(datapath.io.WBvalue, 7)
 
 
 
