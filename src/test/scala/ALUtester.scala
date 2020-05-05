@@ -60,16 +60,24 @@ class ALUtest(datapath: Datapath) extends PeekPokeTester(datapath){
     var instruction = BigInt(instruction1, 2)
 
   poke(datapath.io.inst, instruction)
+
+  step(1) // IF
   step(1) // ID
+
   expect(datapath.io.opcode, 3)
   expect(datapath.io.select, 1)
   expect(datapath.io.regA, 0)
   expect(datapath.io.regB, 0)
   expect(datapath.io.immediate, 8)
-  expect(datapath.io.destReg, 1)
-  //expect(datapath.io.regAvalue, )
+
+  step(1) // EX
+
   expect(datapath.io.result, 8)
 
+  step(1) // MA
+  step(1) // WB
+
+  expect(datapath.io.WBvalue, 8)
 
 
 

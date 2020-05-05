@@ -21,7 +21,7 @@ class Datapath extends Module {
     val immediate = Output(UInt(16.W))
     val destReg = Output(UInt(4.W))
 
-    val regAvalue = Output(UInt(32.W))
+    val WBvalue = Output(UInt(32.W))
 
 
     val result = Output(UInt(32.W))
@@ -60,6 +60,7 @@ class Datapath extends Module {
 
   // define register bank (10 32-bit registers)
   val rMem = Reg(Vec(10, UInt(32.W)))
+  rMem(0) := (0.U(32.W))
 
   // define ALU to be used
   val alu = Module(new ALU())
@@ -82,7 +83,7 @@ class Datapath extends Module {
   opcodeReg := instruction(4, 1)
   memSelectReg1 := instruction(0) // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
   isLoadReg1 := ~instruction(4) // MIGHT BE A BUG HERE
-  aValReg := rMem(instruction(15, 12).asUInt())
+  aValReg := rMem(instruction(15, 12))
 
 
   // --- for testing
@@ -92,7 +93,8 @@ class Datapath extends Module {
                                                                                         io.immediate := 0.U(16.W)
                                                                                         io.select := instruction(7,5)
                                                                                         io.destReg := instruction(11,8)
-                                                                                        io.regAvalue := aValReg
+
+
   // --------------
 
   when(memSelectReg1 === 0.U) { // ---------- ALU Instructions ----------
@@ -201,18 +203,10 @@ class Datapath extends Module {
 
   when(destination =/= 0.U(4.W)) { // can't overwrite 0 in reg0, nice
     rMem(destination) := data
-    //io.result := data
-  } //.otherwise{
-    //io.result := 0.U(32.W)
-  //}
+  }
+  io.WBvalue := rMem(destination)
 
 
-//  when(rMem(1) === 1.U(32.W)) {
-//    io.led := 1.U
-//  }
-//    .otherwise {
-//      io.led := 0.U
-//    }
 
 
 }
