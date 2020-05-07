@@ -3,12 +3,12 @@ import mvp.Datapath
 import org.scalatest.{FlatSpec, Matchers}
 
 // TO RUN TESTS TYPE THIS IN TERMINAL "sbt test"
-// Requires test = 1 in InstructionMemory.scala
 
-class DatapathTest(datapath: Datapath) extends PeekPokeTester(datapath){
+// This tester attempts to run a short program using all three types of ALU instructions
+// NOTE - the instructions are designed to avoid conflicts when ID accessing a register before WB
+class Test1(datapath: Datapath) extends PeekPokeTester(datapath){
 
-  // Start the processor
-  //poke(datapath.io.reset, false.B)
+  poke(datapath.io.testSelect,1)
 
   step(5) // expect at 5
   expect(datapath.io.reg0, 0)
@@ -28,35 +28,56 @@ class DatapathTest(datapath: Datapath) extends PeekPokeTester(datapath){
   expect(datapath.io.reg0, 0)
   expect(datapath.io.reg1, 5)
   expect(datapath.io.reg2, 3)
-  expect(datapath.io.reg3, 8)
+  expect(datapath.io.reg3, 7)
   expect(datapath.io.reg4, 0)
 
   step(1) // expect at 8
   expect(datapath.io.reg0, 0)
   expect(datapath.io.reg1, 5)
   expect(datapath.io.reg2, 3)
-  expect(datapath.io.reg3, 8)
-  expect(datapath.io.reg4, 3)
+  expect(datapath.io.reg3, 7)
+  expect(datapath.io.reg4, 4)
 
   step(1) // expect at 9
   expect(datapath.io.reg0, 0)
   expect(datapath.io.reg1, 5)
-  expect(datapath.io.reg2, 6)
-  expect(datapath.io.reg3, 8)
-  expect(datapath.io.reg4, 3)
+  expect(datapath.io.reg2, 3)
+  expect(datapath.io.reg3, 7)
+  expect(datapath.io.reg4, 6)
 
   step(1) // expect at 10
   expect(datapath.io.reg0, 0)
-  expect(datapath.io.reg1, 6)
-  expect(datapath.io.reg2, 6)
+  expect(datapath.io.reg1, 5)
+  expect(datapath.io.reg2, 3)
   expect(datapath.io.reg3, 8)
-  expect(datapath.io.reg4, 3)
+  expect(datapath.io.reg4, 6)
+
+  step(1) // expect at 11
+  expect(datapath.io.reg0, 0)
+  expect(datapath.io.reg1, 2)
+  expect(datapath.io.reg2, 3)
+  expect(datapath.io.reg3, 8)
+  expect(datapath.io.reg4, 6)
+
+  step(1) // expect at 12
+  expect(datapath.io.reg0, 0)
+  expect(datapath.io.reg1, 2)
+  expect(datapath.io.reg2, 3)
+  expect(datapath.io.reg3, 8)
+  expect(datapath.io.reg4, 6)
+
+  step(1) // expect at 13
+  expect(datapath.io.reg0, 0)
+  expect(datapath.io.reg1, 2)
+  expect(datapath.io.reg2, 3)
+  expect(datapath.io.reg3, 9)
+  expect(datapath.io.reg4, 6)
 
 }
 
 
-class DatapathTester extends FlatSpec with Matchers{
-  "Datapath" should "pass" in {
-    chisel3.iotesters.Driver(()=> new Datapath) {c => new DatapathTest((c))} should be (true)
+class Tester1 extends FlatSpec with Matchers{
+  "Test1" should "pass" in {
+    chisel3.iotesters.Driver(()=> new Datapath) {c => new Test1((c))} should be (true)
   }
 }

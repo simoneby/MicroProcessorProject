@@ -3,31 +3,46 @@ package mvp
 import chisel3._
 import chisel3.util._
 
-//import chisel3.core.{Input, Output, RegInit, when}
-//import chisel3.{Bool, Bundle, Module, Reg, UInt, Vec}
-//import chisel3.util.{Cat, is, switch}
-
-
-
 class Datapath extends Module {
   val io = IO(new Bundle {
-    //val readOne = Input(Bool())
-    val inst = Input(UInt(32.W))
-
-    val opcode = Output(UInt(5.W))
-    val select = Output(UInt(3.W))
-    val regA = Output(UInt(4.W))
-    val regB = Output(UInt(4.W))
+    // --- To Select Test ---
+    val testSelect = Input(UInt(3.W))
+    // --- For Test 0 ---
+    val inst      = Output(UInt(32.W))
+    val opcode    = Output(UInt(5.W))
+    val memSelect = Output(UInt(1.W))
+    val bSelect   = Output(UInt(1.W))
+    val isLoad    = Output(UInt(1.W))
+    val regA      = Output(UInt(4.W))
+    val regB      = Output(UInt(4.W))
     val immediate = Output(UInt(16.W))
-    val destReg = Output(UInt(4.W))
-
-    val WBvalue = Output(UInt(32.W))
-
-
-    val result = Output(UInt(32.W))
+    val result    = Output(UInt(32.W))
+    val destReg   = Output(UInt(4.W))
+    val WBvalue   = Output(UInt(32.W))
+    // --- For Test 1 ---
+    val reg0 = Output(UInt(32.W))
+    val reg1 = Output(UInt(32.W))
+    val reg2 = Output(UInt(32.W))
+    val reg3 = Output(UInt(32.W))
+    val reg4 = Output(UInt(32.W))
   })
 
-  // ------------------------------ pipeline controls ----------------------------
+  // ------------------------------ module instantiation ----------------------------
+
+  // define instruction memory
+  val iMem = Module(new InstructionMemory())
+  iMem.io.testSelect := io.testSelect
+
+  // define data memory
+  val dMem = Module(new DataMemory())  // TODO initial read to load in program data
+
+  // define register bank (10 32-bit registers)
+  val rMem =  RegInit(VecInit(Seq.fill(10)(0.U(32.W))))
+
+  // define ALU to be used
+  val alu = Module(new ALU())
+
+  // ------------------------------ pipeline registers ----------------------------
 
   // IF output buffer reg
   val instructionReg = Reg(UInt(32.W))
@@ -48,54 +63,23 @@ class Datapath extends Module {
   // MA output buffer registers
   val dataReg = Reg(UInt(32.W))
 
-  // ------------------------------ memory instantiation ----------------------------
-
-  // define instruction memory
-  val iMem = Module(new InstructionMemory())
-  // TODO initial read to load in instruction data
-
-  // define data memory
-  val dMem = Module(new DataMemory())
-  // TODO initial read to load in program data
-
-  // define register bank (10 32-bit registers)
-  val rMem = Reg(Vec(10, UInt(32.W)))
-  rMem(0) := (0.U(32.W))
-
-  // define ALU to be used
-  val alu = Module(new ALU())
-
   // ------------------------------ START PIPELINE STAGES ----------------------------
   // ------------------------------ instruction fetch ----------------------------
 
   var pc = RegInit(0.U(8.W)) // program counter starts at 0
-  pc := pc + 4.U(8.W) // increase by 4 each clock cycle (since instructions are 4 bytes)
+  pc := pc + 1.U(8.W)
 
   iMem.io.rdAddr := pc // set memory read address to pc
   instructionReg := iMem.io.rdData // set instruction to be output of memory read
 
   // ------------------------------ instruction decode ----------------------------
 
- // val instruction = instructionReg
+  val instruction = instructionReg
 
-  val instruction = io.inst
-
-  opcodeReg := instruction(4, 1)
-  memSelectReg1 := instruction(0) // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
-  isLoadReg1 := ~instruction(4) // MIGHT BE A BUG HERE
+  opcodeReg := instruction(3, 0)
+  memSelectReg1 := instruction(4) // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
+  isLoadReg1 := ~instruction(0)
   aValReg := rMem(instruction(15, 12))
-
-
-  // --- for testing
-                                                                                        io.opcode := instruction(4,1)
-                                                                                        io.regA := instruction(15, 12)
-                                                                                        io.regB := 0.U(4.W)
-                                                                                        io.immediate := 0.U(16.W)
-                                                                                        io.select := instruction(7,5)
-                                                                                        io.destReg := instruction(11,8)
-
-
-  // --------------
 
   when(memSelectReg1 === 0.U) { // ---------- ALU Instructions ----------
     wbrReg1 := instruction(11, 8)
@@ -106,14 +90,12 @@ class Datapath extends Module {
         bValReg1 := rMem(instruction(19, 16))
         immValReg := 0.U(32.W)
         bSelectReg := true.B
-        io.regB := instruction(19,16)
       }
 
       is(1.U) { // ---- Reg-Imm ----
         bValReg1 := 0.U(32.W)
         immValReg := Cat(0.U(16.W), instruction(31, 16))
         bSelectReg := false.B
-        io.immediate := immValReg
       }
 
       is(2.U) { // ---- Reg ----
@@ -150,11 +132,10 @@ class Datapath extends Module {
     alu.io.b := bVal
   }
   .otherwise {
-  alu.io.b := immVal
+    alu.io.b := immVal
   }
 
   resultReg := alu.io.out.asUInt()
-  io.result := resultReg
 
   val memSelectReg2 = RegNext(memSelectReg1) // pass through
   val isLoadReg2 = RegNext(isLoadReg1) // pass through
@@ -193,7 +174,6 @@ class Datapath extends Module {
     dataReg := result
   }
 
-
   val wbrReg3 = RegNext(wbrReg2) // pass through
 
   // ------------------------------ write back ----------------------------
@@ -204,10 +184,30 @@ class Datapath extends Module {
   when(destination =/= 0.U(4.W)) { // can't overwrite 0 in reg0, nice
     rMem(destination) := data
   }
-  io.WBvalue := rMem(destination)
+
+  // ------------------------------ testing outputs ----------------------------
+
+  // For Test 0
+  io.inst := instructionReg
+  io.opcode := opcodeReg
+  io.memSelect := memSelectReg1
+  io.bSelect := bSelectReg
+  io.isLoad := isLoadReg1
+  io.regA :=  aValReg
+  io.regB := bValReg1
+  io.immediate := immValReg
+  io.destReg := wbrReg1
+  io.result := resultReg
+  val prevWB = RegNext(wbrReg3)
+  io.WBvalue := rMem(prevWB)
 
 
-
+  // For Test 1
+  io.reg0 := rMem(0);
+  io.reg1 := rMem(1);
+  io.reg2 := rMem(2);
+  io.reg3 := rMem(3);
+  io.reg4 := rMem(4);
 
 }
 
