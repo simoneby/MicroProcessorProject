@@ -10,13 +10,13 @@ class test0(datapath: Datapath) extends PeekPokeTester(datapath){
   poke(datapath.io.testSelect,0);
 
   step(1) // IF
-  expect(datapath.io.inst, 524579)
+  expect(datapath.io.inst, 524580)
 
   step(1) // ID
-  expect(datapath.io.opcode, 3)
+  expect(datapath.io.opcode, 4)
   expect(datapath.io.memSelect, 0)
   expect(datapath.io.bSelect, 0)
-  expect(datapath.io.isLoad, 0)
+  expect(datapath.io.isLoad, 1)
   expect(datapath.io.regA, 0)
   expect(datapath.io.regB, 0)
   expect(datapath.io.immediate, 8)

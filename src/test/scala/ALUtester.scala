@@ -10,6 +10,7 @@ class ALUtest(alu: ALU) extends PeekPokeTester(alu){
   var a = 0
   var b = 0
 
+  def bubl(): Int = {0}
   def pass(a: Int, b: Int): Int = {a}
   def inc(a: Int, b: Int): Int = {a + 1}
   def dec(a: Int, b: Int): Int = {a - 1}
@@ -29,9 +30,9 @@ class ALUtest(alu: ALU) extends PeekPokeTester(alu){
 
       b = k
       poke(alu.io.b, b)
-      val functions = Vector(pass(a,b), inc(a,b), dec(a,b), add(a,b), sub(a,b), not(a,b), and(a,b), or(a,b), xor(a,b))
+      val functions = Vector(bubl(), pass(a,b), inc(a,b), dec(a,b), add(a,b), sub(a,b), not(a,b), and(a,b), or(a,b), xor(a,b))
 
-      for (i <- 0 until 9) {
+      for (i <- 0 until 10) {
 
         poke(alu.io.opcode, i)
 

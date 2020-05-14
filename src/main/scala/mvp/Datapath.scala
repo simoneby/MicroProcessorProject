@@ -128,7 +128,7 @@ class Datapath extends Module {
   alu.io.opcode := opcode
   alu.io.a := aVal
   alu.io.b := 0.U
-  when(bSelect === true.B) { // ALU must know to ignore second opearnd for 1-operand opcodes
+  when(bSelect === true.B) { // ALU must know to ignore second operand for 1-operand opcodes
     alu.io.b := bVal
   }
   .otherwise {
