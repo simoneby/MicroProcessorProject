@@ -25,6 +25,9 @@ class Datapath extends Module {
     val reg2 = Output(UInt(32.W))
     val reg3 = Output(UInt(32.W))
     val reg4 = Output(UInt(32.W))
+    // --- For Test 3 ---
+    val memLoc = Output(UInt(8.W))
+    val memData = Output(UInt(32.W))
   })
 
   // ------------------------------ module instantiation ----------------------------
@@ -76,12 +79,12 @@ class Datapath extends Module {
 
   val instruction = instructionReg
 
-  opcodeReg := instruction(3, 0)
   memSelectReg1 := instruction(4) // MIGHT BE A BUG HERE WHEN CHANGING TYPE TO BOOL
   isLoadReg1 := ~instruction(0)
   aValReg := rMem(instruction(15, 12))
 
-  when(memSelectReg1 === 0.U) { // ---------- ALU Instructions ----------
+  when(instruction(4) === 0.U(1.W)) { // ---------- ALU Instructions ----------
+    opcodeReg := instruction(3, 0)
     wbrReg1 := instruction(11, 8)
 
     switch(instruction(7, 5).asUInt()) {
@@ -105,10 +108,11 @@ class Datapath extends Module {
       }
     }
   }.otherwise { // ---------- Memory Instructions ---------
+    opcodeReg := 4.U(4.W)
     immValReg := Cat(0.U(24.W), instruction(27, 20))
     bSelectReg := false.B
 
-    when(isLoadReg1) { // ---- Load ----
+    when(instruction(0) === 0.U(1.W)) { // ---- Load ----
       wbrReg1 := instruction(11, 8)
       bValReg1 := 0.U(32.W)
 
@@ -119,6 +123,7 @@ class Datapath extends Module {
   }
 
   // ------------------------------ execute ----------------------------
+
   val opcode = opcodeReg.asUInt()
   val bSelect = bSelectReg
   val aVal = aValReg.asUInt()
@@ -146,18 +151,18 @@ class Datapath extends Module {
 
   val memSelect = memSelectReg2
   val isLoad = isLoadReg2
-  val result = resultReg
+  val result = resultReg(7,0) // memory addresses only go up to 8 bits so cut off excess
   val writeData = bValReg2
 
-  when(memSelect) {
-    when(isLoad) { // ----- Load -----
+  when(memSelect === true.B) {
+    when(isLoad === true.B) { // ----- Load -----
       dMem.io.wr := false.B
       dMem.io.rd := true.B
       dMem.io.rdAddr := result
       dMem.io.wrAddr := 0.U(8.W)
       dMem.io.wrData := 0.U(32.W)
       dataReg := dMem.io.rdData
-    } otherwise { // ----- Store -----
+    }.otherwise { // ----- Store -----
       dMem.io.wr := true.B
       dMem.io.rd := false.B
       dMem.io.rdAddr := 0.U(8.W)
@@ -165,7 +170,7 @@ class Datapath extends Module {
       dMem.io.wrData := writeData
       dataReg := 0.U(32.W)
     }
-  } otherwise {
+  }.otherwise {
     dMem.io.rd := false.B
     dMem.io.wr := false.B
     dMem.io.rdAddr := 0.U(8.W)
@@ -201,13 +206,18 @@ class Datapath extends Module {
   val prevWB = RegNext(wbrReg3)
   io.WBvalue := rMem(prevWB)
 
-
   // For Test 1
   io.reg0 := rMem(0);
   io.reg1 := rMem(1);
   io.reg2 := rMem(2);
   io.reg3 := rMem(3);
   io.reg4 := rMem(4);
+
+  // For Test 3
+  val memAddr = RegNext(dMem.io.wrAddr)
+  val memData = RegNext(dMem.io.wrData)
+  io.memLoc := memAddr
+  io.memData := memData
 
 }
 

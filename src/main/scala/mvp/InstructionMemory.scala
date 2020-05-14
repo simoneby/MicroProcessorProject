@@ -45,9 +45,20 @@ class InstructionMemory() extends Module {
       mem(7) := "b00000000_00000000_00000000_00000000".U
       mem(8) := "b000000000000_0010_0100_0011_000_0_0101".U
     }
-    // ----- Test 2 : Single Memory Instruction -----
-    // ----- Test 3 : Basic Program -----
+    // ----- Test 3 : Single Memory Store Instruction -----
     is(3.U(3.W)){
+      mem(0) := "b0000000000001100_0000_0001_001_0_0100".U
+      mem(1) := "b00000000_00000000_00000000_00000000".U
+      mem(2) := "b00000000_00000000_00000000_00000000".U
+      mem(3) := "b00000000_00000000_00000000_00000000".U
+      mem(4) := "b0000_00000011_0001_0000_0000000_1_0001".U
+    }
+    // ----- Test 4 : Single Memory Load Instruction -----
+    is(4.U(3.W)){
+      // TODO
+    }
+    // ----- Test 5 : Basic Program -----
+    is(5.U(3.W)){
       // TODO
     }
   }
