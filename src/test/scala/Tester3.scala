@@ -29,8 +29,7 @@ class test3(datapath: Datapath) extends PeekPokeTester(datapath){
   expect(datapath.io.result, 3)
 
   step(1) // Mem MA - 8
-  expect(datapath.io.memLoc, 3)
-  expect(datapath.io.memData, 12)
+  expect(datapath.io.memData, 0)
 
   step(1) // Mem WB - 9
   expect(datapath.io.WBvalue, 0)

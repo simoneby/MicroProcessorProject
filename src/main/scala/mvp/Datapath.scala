@@ -25,8 +25,7 @@ class Datapath extends Module {
     val reg2 = Output(UInt(32.W))
     val reg3 = Output(UInt(32.W))
     val reg4 = Output(UInt(32.W))
-    // --- For Test 3 ---
-    val memLoc = Output(UInt(8.W))
+    // --- For Test 3 & 4 ---
     val memData = Output(UInt(32.W))
   })
 
@@ -38,6 +37,10 @@ class Datapath extends Module {
 
   // define data memory
   val dMem = Module(new DataMemory())  // TODO initial read to load in program data
+  dMem.io.wrAddr := 0.U
+  dMem.io.wrData := 0.U
+  dMem.io.rdAddr := 0.U
+  dMem.io.wr := false.B
 
   // define register bank (10 32-bit registers)
   val rMem =  RegInit(VecInit(Seq.fill(10)(0.U(32.W))))
@@ -142,41 +145,37 @@ class Datapath extends Module {
 
   resultReg := alu.io.out.asUInt()
 
+  when(memSelectReg1 === true.B){
+    val result = resultReg(7,0) // memory addresses only go up to 8 bits so cut off excess //TODO don't use reg cause clk?
+    when(isLoadReg1 === true.B){
+      dMem.io.wr := false.B
+      dMem.io.rdAddr := result
+    }.otherwise{
+      dMem.io.wr := true.B
+      dMem.io.wrAddr := result
+      dMem.io.wrData := bValReg1
+    }
+  }.otherwise{
+    dMem.io.wr := false.B
+  }
+
   val memSelectReg2 = RegNext(memSelectReg1) // pass through
   val isLoadReg2 = RegNext(isLoadReg1) // pass through
-  val bValReg2 = RegNext(bValReg1) // pass through
   val wbrReg2 = RegNext(wbrReg1) // pass through
 
   // ------------------------------ memory access ----------------------------
 
   val memSelect = memSelectReg2
   val isLoad = isLoadReg2
-  val result = resultReg(7,0) // memory addresses only go up to 8 bits so cut off excess
-  val writeData = bValReg2
 
   when(memSelect === true.B) {
     when(isLoad === true.B) { // ----- Load -----
-      dMem.io.wr := false.B
-      dMem.io.rd := true.B
-      dMem.io.rdAddr := result
-      dMem.io.wrAddr := 0.U(8.W)
-      dMem.io.wrData := 0.U(32.W)
       dataReg := dMem.io.rdData
-    }.otherwise { // ----- Store -----
-      dMem.io.wr := true.B
-      dMem.io.rd := false.B
-      dMem.io.rdAddr := 0.U(8.W)
-      dMem.io.wrAddr := result
-      dMem.io.wrData := writeData
+    }.otherwise {             // ----- Store -----
       dataReg := 0.U(32.W)
     }
   }.otherwise {
-    dMem.io.rd := false.B
-    dMem.io.wr := false.B
-    dMem.io.rdAddr := 0.U(8.W)
-    dMem.io.wrAddr := 0.U(8.W)
-    dMem.io.wrData := 0.U(32.W)
-    dataReg := result
+    dataReg := resultReg
   }
 
   val wbrReg3 = RegNext(wbrReg2) // pass through
@@ -186,7 +185,7 @@ class Datapath extends Module {
   val data = dataReg
   val destination = wbrReg3
 
-  when(destination =/= 0.U(4.W)) { // can't overwrite 0 in reg0, nice
+  when(destination =/= 0.U(4.W)) { // can't overwrite 0 in reg0
     rMem(destination) := data
   }
 
@@ -213,11 +212,8 @@ class Datapath extends Module {
   io.reg3 := rMem(3);
   io.reg4 := rMem(4);
 
-  // For Test 3
-  val memAddr = RegNext(dMem.io.wrAddr)
-  val memData = RegNext(dMem.io.wrData)
-  io.memLoc := memAddr
-  io.memData := memData
+  // For Test 3 & 4
+  io.memData := dataReg
 
 }
 
