@@ -27,6 +27,9 @@ class Datapath extends Module {
     val reg4 = Output(UInt(32.W))
     // --- For Test 3 & 4 ---
     val memData = Output(UInt(32.W))
+
+    val led = Output(UInt(1.W))
+
   })
 
   // ------------------------------ module instantiation ----------------------------
@@ -40,7 +43,8 @@ class Datapath extends Module {
   dMem.io.wrAddr := 0.U
   dMem.io.wrData := 0.U
   dMem.io.rdAddr := 0.U
-  dMem.io.wr := false.B
+  dMem.io.wr := true.B
+  io.led := dMem.io.led
 
   // define register bank (10 32-bit registers)
   val rMem =  RegInit(VecInit(Seq.fill(10)(0.U(32.W))))
