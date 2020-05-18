@@ -5,28 +5,7 @@ import chisel3.util._
 
 class Datapath extends Module {
   val io = IO(new Bundle {
-    // --- To Select Test ---
-    val testSelect = Input(UInt(3.W))
-    // --- For Test 0 ---
-    val inst      = Output(UInt(32.W))
-    val opcode    = Output(UInt(5.W))
-    val memSelect = Output(UInt(1.W))
-    val bSelect   = Output(UInt(1.W))
-    val isLoad    = Output(UInt(1.W))
-    val regA      = Output(UInt(4.W))
-    val regB      = Output(UInt(4.W))
-    val immediate = Output(UInt(16.W))
-    val result    = Output(UInt(32.W))
-    val destReg   = Output(UInt(4.W))
-    val WBvalue   = Output(UInt(32.W))
-    // --- For Test 1 ---
-    val reg0 = Output(UInt(32.W))
-    val reg1 = Output(UInt(32.W))
-    val reg2 = Output(UInt(32.W))
-    val reg3 = Output(UInt(32.W))
-    val reg4 = Output(UInt(32.W))
-    // --- For Test 3 & 4 ---
-    val memData = Output(UInt(32.W))
+
 
     val led = Output(UInt(1.W))
 
@@ -36,7 +15,7 @@ class Datapath extends Module {
 
   // define instruction memory
   val iMem = Module(new InstructionMemory())
-  iMem.io.testSelect := io.testSelect
+  //iMem.io.testSelect := io.testSelect
 
   // define data memory
   val dMem = Module(new DataMemory())  // TODO initial read to load in program data
@@ -195,29 +174,7 @@ class Datapath extends Module {
 
   // ------------------------------ testing outputs ----------------------------
 
-  // For Test 0
-  io.inst := instructionReg
-  io.opcode := opcodeReg
-  io.memSelect := memSelectReg1
-  io.bSelect := bSelectReg
-  io.isLoad := isLoadReg1
-  io.regA :=  aValReg
-  io.regB := bValReg1
-  io.immediate := immValReg
-  io.destReg := wbrReg1
-  io.result := resultReg
-  val prevWB = RegNext(wbrReg3)
-  io.WBvalue := rMem(prevWB)
 
-  // For Test 1
-  io.reg0 := rMem(0);
-  io.reg1 := rMem(1);
-  io.reg2 := rMem(2);
-  io.reg3 := rMem(3);
-  io.reg4 := rMem(4);
-
-  // For Test 3 & 4
-  io.memData := dataReg
 
 }
 

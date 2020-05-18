@@ -5,7 +5,6 @@ import chisel3.util._
 
 class InstructionMemory() extends Module {
   val io = IO(new Bundle {
-    val testSelect = Input(UInt(3.W))
     val rdAddr     = Input(UInt(8.W))
     val rdData     = Output(UInt(32.W))
   })
