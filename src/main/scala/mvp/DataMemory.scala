@@ -17,13 +17,16 @@ class DataMemory() extends Module{
   val mem = SyncReadMem((scala.math.pow(2,8)).toInt, UInt(32.W))
 
 
-  val regLed = RegInit(0.U)
-  io.led := regLed
+  io.led := 0.U
+  //val regLed = RegInit(0.U)
+  //io.led := regLed
 
   when (io.wrAddr === 0.U && io.wr){
-    regLed := io.wrData
+    io.led := 1.U
   }
-
+  .otherwise{
+    io.led := 0.U
+  }
 
   io.rdData := mem.read(io.rdAddr)
 
